@@ -3,6 +3,7 @@
 namespace App\Controller\Event;
 
 use App\Entity\Event;
+use App\Entity\EventConfig;
 use App\Repository\EventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
@@ -15,7 +16,6 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-
 class EventController extends AbstractFOSRestController
 {
     /**
@@ -66,16 +66,32 @@ class EventController extends AbstractFOSRestController
     }
 
     /**
-     * @Rest\RequestParam(name="title", description="title of the list", nullable=false)
+     * @Rest\QueryParam(name="eventName", description="title of the list", nullable=false)
+     * @Rest\QueryParam(name="distance", description="title of the list", nullable=false)
+     * @Rest\QueryParam(name="location", description="title of the list", nullable=false)
+     * @Rest\QueryParam(name="startDate", description="title of the list", nullable=false)
+     * @Rest\QueryParam(name="endDate", description="title of the list", nullable=false)
+     * @Rest\QueryParam(name="isTheme", description="title of the list", nullable=false)
      * @param ParamFetcher $paramFetcher
      * @Rest\Put("/putEvent")
+     * @return
      */
     public function putEventAction(ParamFetcher $paramFetcher)
     {
-        $title = $paramFetcher->get('title');
-        if($title){
+        $eventName = $paramFetcher->get('eventName');
+        $distance = $paramFetcher->get('distance');
+        $location = $paramFetcher->get('location');
+        $startDate = $paramFetcher->get('startDate');
+        $endDate = $paramFetcher->get('endDate');
+        $isTheme = $paramFetcher->get('isTheme');
+        if($eventName && $distance && $location && $startDate && $endDate && $isTheme){
             $event = new Event();
-            $event->setEventName("Hello world");
+            $event->setEventName($eventName);
+            $event->setDistance($distance);
+            $event->setLocation($location);
+            $event->setStartDate( (new \DateTime())->setTimestamp($startDate));
+            $event->setEndDate( (new \DateTime())->setTimestamp($endDate));
+            $event->setIsTheme($isTheme);
             $this->entityManager->persist($event);
             $this->entityManager->flush();
             $jsonObject = $this->serializer->serialize($event, 'json', [
@@ -85,7 +101,7 @@ class EventController extends AbstractFOSRestController
             ]);
             return new Response($jsonObject, 200, ['Content-Type' => 'application/json']);
         }
-        return new Response('$title => thizs cannot be null', Response::HTTP_BAD_REQUEST, ['Content-Type' => 'application/json']);
+        return new Response('$title => this cannot be null', Response::HTTP_BAD_REQUEST, ['Content-Type' => 'application/json']);
     }
 
     /**

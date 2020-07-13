@@ -158,4 +158,5 @@ class EventConfig
 
         return $this;
     }
+
 }

@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\EventRepository;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\TimeStamps\TimeStamps;
+use phpDocumentor\Reflection\Types\Integer;
 
 /**
  * @ORM\Entity(repositoryClass=EventRepository::class)
@@ -51,7 +52,7 @@ class Event
     private $isTheme;
 
     /**
-     * @ORM\OneToOne(targetEntity="App\Entity\EventConfig", mappedBy="event")
+     * @ORM\OneToOne(targetEntity="App\Entity\EventConfig", mappedBy="event",  cascade={"persist", "remove"})
      */
     private $eventConfig;
 
@@ -59,6 +60,13 @@ class Event
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function setId(int $id): self
+    {
+        $this->id = $id;
+
+        return $this;
     }
 
     public function getDistance(): ?float

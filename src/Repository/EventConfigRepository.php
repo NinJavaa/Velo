@@ -19,6 +19,7 @@ class EventConfigRepository extends ServiceEntityRepository
         parent::__construct($registry, EventConfig::class);
     }
 
+
     // /**
     //  * @return EventConfig[] Returns an array of EventConfig objects
     //  */
@@ -47,4 +48,81 @@ class EventConfigRepository extends ServiceEntityRepository
         ;
     }
     */
+
+    public function transform(EventConfig $eventConfig)
+    {
+        return [
+            'rep'    => (int) $eventConfig->getRep()
+        ];
+    }
+
+    public function transformAll()
+    {
+        $eventConfigs = $this->findAll();
+        $eventConfigArray = [];
+
+        foreach ($eventConfigs as $eventConfig) {
+            $eventConfigArray[] = $this->transform($eventConfig);
+        }
+
+        return $eventConfigArray;
+    }
+
+
+    /**
+     * Returns a 422 Unprocessable Entity
+     *
+     * @param string $message
+     *
+     * @return Symfony\Component\HttpFoundation\JsonResponse
+     */
+    public function respondValidationError($message = 'Validation errors')
+    {
+        return $this->setStatusCode(422)->respondWithErrors($message);
+    }
+
+    /**
+     * Returns a 404 Not Found
+     *
+     * @param string $message
+     *
+     * @return Symfony\Component\HttpFoundation\JsonResponse
+     */
+    public function respondNotFound($message = 'Not found!')
+    {
+        return $this->setStatusCode(404)->respondWithErrors($message);
+    }
+
+    /**
+     * Returns a 201 Created
+     *
+     * @param array $data
+     *
+     * @return Symfony\Component\HttpFoundation\JsonResponse
+     */
+    public function respondCreated($data = [])
+    {
+        return $this->setStatusCode(201)->respond($data);
+    }
+
+// this method allows us to accept JSON payloads in POST requests
+// since Symfony 4 doesn't handle that automatically:
+
+    protected function transformJsonBody(\Symfony\Component\HttpFoundation\Request $request)
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null;
+        }
+
+        if ($data === null) {
+            return $request;
+        }
+
+        $request->request->replace($data);
+
+        return $request;
+    }
+
 }
