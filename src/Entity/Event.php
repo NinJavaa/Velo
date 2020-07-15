@@ -32,12 +32,12 @@ class Event
     private $location;
 
     /**
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(type="integer")
      */
     private $startDate;
 
     /**
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(type="integer")
      */
     private $endDate;
 
@@ -55,6 +55,13 @@ class Event
      * @ORM\OneToOne(targetEntity="App\Entity\EventConfig", mappedBy="event",  cascade={"persist", "remove"})
      */
     private $eventConfig;
+
+    /**
+     *
+     * @ORM\ManyToOne(targetEntity="App\Entity\Category",inversedBy="events", fetch="EXTRA_LAZY")
+     * @ORM\JoinColumn(name="category_id", referencedColumnName="id")
+     */
+    protected $category;
 
 
     public function getId(): ?int
@@ -93,24 +100,24 @@ class Event
         return $this;
     }
 
-    public function getStartDate(): ?\DateTimeInterface
+    public function getStartDate(): ?int
     {
         return $this->startDate;
     }
 
-    public function setStartDate(\DateTimeInterface $startDate): self
+    public function setStartDate(int $startDate): self
     {
         $this->startDate = $startDate;
 
         return $this;
     }
 
-    public function getEndDate(): ?\DateTimeInterface
+    public function getEndDate(): ?int
     {
         return $this->endDate;
     }
 
-    public function setEndDate(\DateTimeInterface $endDate): self
+    public function setEndDate(int $endDate): self
     {
         $this->endDate = $endDate;
 
@@ -155,6 +162,14 @@ class Event
         if ($eventConfig->getEvent() !== $newEvent) {
             $eventConfig->setEvent($newEvent);
         }
+
+        return $this;
+    }
+
+
+    public function setCategory(?Category $category): self
+    {
+        $this->category = $category;
 
         return $this;
     }

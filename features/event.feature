@@ -10,7 +10,7 @@ Feature: To ensure te API is responding in a simple manner
       | some fake album name                  | 1000     | paris    |  4845415  | 3411861 | true    |
 
 
-  Scenario: Can get a Single Album
+  Scenario: Can post a Single Event
     Given I request "/postEvent" using HTTP POST
     Given the request body is:
     """
@@ -28,7 +28,7 @@ Feature: To ensure te API is responding in a simple manner
     And the response body contains JSON:
      """
     {
-          "id": 69,
+          "id": 15,
           "distance": 1000,
           "location": "paris",
           "startDate": "1970-02-26T02:56:55+01:00",
@@ -42,18 +42,18 @@ Feature: To ensure te API is responding in a simple manner
 
 
   Scenario: Can get a Single Album
-    Given I request "/getEvent/4" using HTTP GET
+    Given I request "/getEvent/1" using HTTP GET
     Then the response code is 200
     And the response body contains JSON:
      """
     {
-          "id": 4,
-          "distance": 1000,
-          "location": "paris",
-          "startDate": "1970-02-26T12:07:37+01:00",
-          "endDate": "1970-02-26T02:47:28+01:00",
-          "eventName": "now that's what i call album vol2",
-          "isTheme": true,
-          "eventConfig": null
+    "id": 1,
+    "distance": 454116651,
+    "location": "bro",
+    "startDate": "1970-01-19T03:58:14+01:00",
+    "endDate": "1970-01-08T13:16:35+01:00",
+    "eventName": "dfdfdfdf",
+    "isTheme": true,
+    "eventConfig": null
     }
     """

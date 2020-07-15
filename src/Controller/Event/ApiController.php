@@ -67,7 +67,7 @@ class ApiController extends AbstractFOSRestController
      *
      * @return Symfony\Component\HttpFoundation\JsonResponse
      */
-    public function respondWithErrors($errors, $headers = [])
+    private function respondWithErrors($errors, $headers = [])
     {
         $data = [
             'errors' => $errors,

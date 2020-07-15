@@ -66,7 +66,6 @@ class EventConfigController extends ApiController
 
 
     /**
-     * @Rest\RequestParam(name="eventID", description="title of the list", nullable=false)
      * @Rest\Get("/config/getConfigs")
      */
     public function index()
@@ -77,8 +76,7 @@ class EventConfigController extends ApiController
     }
 
     /**
-     * @Rest\QueryParam(name="id", description="title of the list", nullable=false)
-     * @Rest\Get("/config/getConfig")
+     * @Rest\Get("/config/getConfig/{id}")
      */
     public function getConfig(Request $request)
     {
@@ -89,7 +87,7 @@ class EventConfigController extends ApiController
     }
 
     /**
-     * @Rest\Post("/config/putConf")
+     * @Rest\Post("/config/createConfig")
      */
     public function createConf(Request $request)
     {
@@ -107,12 +105,16 @@ class EventConfigController extends ApiController
         $eventConfig = new EventConfig();
         $event = $this->eventRepository->findOneBy([
             'id' => $request->get('event')]);
+        // validate Variables Needed !!!!!
+        if (! $event) {
+            return $this->respondValidationError('No Event entity with this (id = ' . $request->get('event') .") ". 'exist');
+        }
         //check not null event is needed
         $eventConfig->setRep($request->get('rep'));
         $eventConfig->setStatus($request->get('status'));
         $eventConfig->setIsArchived($request->get('isArchived'));
-        $eventConfig->setDateRep((new \DateTime())->setTimestamp($request->get('dateRep')));
-        $eventConfig->setShowDate((new \DateTime())->setTimestamp($request->get('dateRep')));
+        $eventConfig->setDateRep($request->get('dateRep'));
+        $eventConfig->setShowDate($request->get('dateRep'));
         $eventConfig->setCommentPermession($request->get('commentPermession'));
         $eventConfig->setShowInviteList($request->get('showInviteList'));
         $event->setEventConfig($eventConfig);
@@ -123,6 +125,89 @@ class EventConfigController extends ApiController
         $jsonObject = $this->serializer($eventConfig, $this->serializer);
         return $this->respond($jsonObject);
     }
+
+    /**
+     * @Rest\Delete("/config/deleteConfig/{id}")
+     */
+    public function deleteConf(Request $request)
+    {
+        if (!$request) {
+            return $this->respondValidationError('Please provide a valid request!');
+        }
+
+        if (! $request->get('id')) {
+            return $this->respondValidationError('Please provide an id!');
+        }
+        $eventConfig = $this->eventConfigRepository->findOneBy([
+            'id' => $request->get('id')
+        ]);
+        // validate Variables Needed !!!!!
+        if (!$eventConfig) {
+            return $this->respondValidationError('No EventConfig entity with this (id = ' . $request->get('id') .") ". 'exist');
+        }
+
+        $this->entityManager->remove($eventConfig);
+        $this->entityManager->flush();
+
+        /** ONLY FOR TEST */
+        return $this->json([
+            'response' => 'Deleted Successfully'
+        ]);
+        /**              **/
+
+        //return $this->respondCreated('Deleted Successfully');
+    }
+
+    /**
+     * @Rest\Patch("/config/updateConfig/{id}")
+     */
+    public function updateConfig(Request $request)
+    {
+        if (!$request) {
+            return $this->respondValidationError('Please provide a valid request!');
+        }
+
+        if (! $request->get('id')) {
+            return $this->respondValidationError('Please provide an id!');
+        }
+        $eventConfig = $this->eventConfigRepository->findOneBy([
+            'id' => $request->get('id')
+        ]);
+
+        $event = $this->eventRepository->findOneBy([
+            'id' => $request->get('event')
+        ]);
+        // validate Variables Needed !!!!!
+        if (!$eventConfig) {
+            return $this->respondValidationError('No EventConfig entity with this (id = ' . $request->get('id') .") ". 'exist');
+        }
+
+        // validate Variables Needed !!!!!
+        if (! $request->get('event')) {
+            return $this->respondValidationError('Please provide an event!');
+        }
+
+        // validate Variables Needed !!!!!
+        if (!$event) {
+            return $this->respondValidationError('No EventConfig entity with this (id = ' . $request->get('id') .") ". 'exist');
+        }
+
+        $eventConfig->setRep($request->get('rep'));
+        $eventConfig->setStatus($request->get('status'));
+        $eventConfig->setIsArchived($request->get('isArchived'));
+        $eventConfig->setDateRep($request->get('dateRep'));
+        $eventConfig->setShowDate($request->get('dateRep'));
+        $eventConfig->setCommentPermession($request->get('commentPermession'));
+        $eventConfig->setShowInviteList($request->get('showInviteList'));
+        $event->setEventConfig($eventConfig);
+
+        $this->entityManager->persist($event);
+        $this->entityManager->flush();
+
+        $jsonObject = $this->serializer($eventConfig, $this->serializer);
+        return $this->respond($jsonObject);
+    }
+
 
 
 }

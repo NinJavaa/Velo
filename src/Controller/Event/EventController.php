@@ -4,6 +4,7 @@ namespace App\Controller\Event;
 
 use App\Entity\Event;
 use App\Entity\EventConfig;
+use App\Repository\CategoryRepository;
 use App\Repository\EventConfigRepository;
 use App\Repository\EventRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -37,6 +38,11 @@ class EventController extends ApiController
     private $eventConfigRepository;
 
     /**
+     * @var CategoryRepository
+     **/
+    private $categoryRepository;
+
+    /**
      * @var Encoders
      **/
     private $encoders;
@@ -51,9 +57,10 @@ class EventController extends ApiController
      **/
     private $serializer;
 
-    public function __construct(EventRepository $eventRepository, EntityManagerInterface $entityManager)
+    public function __construct(EventRepository $eventRepository, CategoryRepository $categoryRepository, EntityManagerInterface $entityManager)
     {
         $this->eventRepository = $eventRepository;
+        $this->categoryRepository = $categoryRepository;
         $this->entityManager = $entityManager;
         $this->encoders = [new JsonEncoder()]; // If no need for XmlEncoder
         $this->normalizers = [new DateTimeNormalizer(), new ObjectNormalizer()];
@@ -73,7 +80,8 @@ class EventController extends ApiController
             }
         ]);
         // For instance, return a Response with encoded Json
-        return new Response($jsonObject, 200, ['Content-Type' => 'application/json']);    }
+        return new Response($jsonObject, 200, ['Content-Type' => 'application/json']);
+    }
 
     /**
      * @Rest\Get("/getEvent/{id}")
@@ -82,7 +90,7 @@ class EventController extends ApiController
     {
         $request = $this->transformJsonBody($request);
         $event = $this->eventRepository->findOneBy(['id' => $request->get('id')]);
-       // $jsonObject = $this->serializer($event,$this->serializer);
+        // $jsonObject = $this->serializer($event,$this->serializer);
         //return $this->respond($jsonObject);
         $jsonObject = $this->serializer->serialize($event, 'json', [
             'circular_reference_handler' => function ($object) {
@@ -94,9 +102,9 @@ class EventController extends ApiController
     }
 
     /**
-     * @Rest\Post("/postEvent")
+     * @Rest\Post("/createEvent")
      */
-    public function putEventAction(Request $request)
+    public function postEventAction(Request $request)
     {
         $request = $this->transformJsonBody($request);
         if (!$request) {
@@ -104,48 +112,97 @@ class EventController extends ApiController
         }
 
         // validate Variables Needed !!!!!
-        if (! $request->get('eventName')) {
+        if (!$request->get('eventName')) {
             return $this->respondValidationError('Please provide a event!');
         }
         // Create and persist the new event Config using cascade since that the relation is composition oneToOne
-            $event = new Event();
-            $eventConfig = $request->get('eventConfig');
-            $event->setEventName( $request->get('eventName'));
-            $event->setDistance($request->get('distance'));
-            $event->setLocation($request->get('location'));
-            $event->setStartDate( (new \DateTime())->setTimestamp($request->get('startDate')));
-            $event->setEndDate( (new \DateTime())->setTimestamp($request->get('endDate')));
-            $event->setIsTheme($request->get('isTheme'));
-            $this->entityManager->persist($event);
-            $this->entityManager->flush();
-            $jsonObject = $this->serializer->serialize($event, 'json', [
-                'circular_reference_handler' => function ($object) {
-                    return $object->getId();
-                }
-            ]);
-            return new Response($jsonObject, 200, ['Content-Type' => 'application/json']);
+        $event = $this->createEvent($request);
+        $this->entityManager->persist($event);
+        $this->entityManager->flush();
+        $jsonObject = $this->serializer->serialize($event, 'json', [
+            'circular_reference_handler' => function ($object) {
+                return $object->getId();
+            }
+        ]);
+        return new Response($jsonObject, 200, ['Content-Type' => 'application/json']);
     }
 
     /**
      * @Rest\Delete("/deleteEvent/{id}")
      */
-    public function deleteEventAction(int $id)
+    public function deleteEventAction(Request $request)
     {
-        return $this->json([
-            'message' => 'Weclome to your new Controller',
-            'path' => 'src/Controller/WelcomeController.php',
-        ]);
+
     }
 
     /**
      * @Rest\Patch("/updateEvent/{id}")
      */
-    public function patchEventAction(int $id)
+    public function patchEventAction(Request $request)
+    {
+        if (!$request) {
+            return $this->respondValidationError('Please provide a valid request!');
+        }
+        // validate Variables Needed !!!!!
+        if (!$request->getContent()) {
+            return $this->respondValidationError('Please provide an Event!');
+        }
+
+        if (!$request->get('eventName')) {
+            return $this->respondValidationError('Please provide an event!');
+        }
+
+        $event = $this->eventRepository->findOneBy([
+            'id' => $request->get('id')]);
+
+        if (!$event) {
+            return $this->respondValidationError('No Event entity with this (id = ' . $request->get('id') . ") " . 'exist');
+        }
+        $event = $this->createEvent($request);
+        $this->entityManager->persist($event);
+        $this->entityManager->flush();
+
+        /** ONLY FOR TEST */
+        //return $this->json([
+        //     'response' => 'Updated Successfully'
+        // ]);
+        /**              **/
+
+        $jsonObject = $this->serializer($event, $this->serializer);
+        return $this->respond($jsonObject);
+    }
+
+    /**
+     * @Rest\Get("/ping")
+     */
+    public function healthCheck()
     {
         return $this->json([
-            'message' => 'Weclome to your new Controller',
-            'path' => 'src/Controller/WelcomeController.php',
+            'response' => 'pong',
         ]);
+    }
+
+
+    private function createEvent(Request $req)
+    {
+        $event = new Event();
+        $event->setEventName($req->get('eventName'));
+        $event->setDistance($req->get('distance'));
+        $event->setLocation($req->get('location'));
+        $event->setStartDate($req->get('startDate'));
+        $event->setEndDate($req->get('startDate'));
+        $event->setIsTheme($req->get('isTheme'));
+
+        if ($req->get('category')) {
+            $category = $this->categoryRepository->find([
+                'id' => $req->get('category')]);
+            if (!$category) {
+                return $this->respondValidationError('No Category entity with this (id = ' . $req->get('category') . ") " . 'exist');
+            } else {
+                $event->setCategory($category);
+            }
+        }
+        return $event;
     }
 
 

@@ -23,7 +23,7 @@ class EventConfig
     private $rep;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
+     * @ORM\Column(type="integer", nullable=true)
      */
     private $dateRep;
 
@@ -48,7 +48,7 @@ class EventConfig
     private $isArchived;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
+     * @ORM\Column(type="integer", nullable=true)
      */
     private $showDate;
 
@@ -75,12 +75,12 @@ class EventConfig
         return $this;
     }
 
-    public function getDateRep(): ?\DateTimeInterface
+    public function getDateRep(): ?int
     {
         return $this->dateRep;
     }
 
-    public function setDateRep(?\DateTimeInterface $dateRep): self
+    public function setDateRep(?int $dateRep): self
     {
         $this->dateRep = $dateRep;
 
@@ -135,12 +135,12 @@ class EventConfig
         return $this;
     }
 
-    public function getShowDate(): ?\DateTimeInterface
+    public function getShowDate(): ?int
     {
         return $this->showDate;
     }
 
-    public function setShowDate(?\DateTimeInterface $showDate): self
+    public function setShowDate(?int $showDate): self
     {
         $this->showDate = $showDate;
 
