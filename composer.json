@@ -18,6 +18,8 @@
         "symfony/yaml": "5.1.*"
     },
     "require-dev": {
+        "behat/behat": "^3.7",
+        "imbo/behat-api-extension": "^2.1",
         "symfony/web-server-bundle": "^4.4.2"
     },
     "config": {

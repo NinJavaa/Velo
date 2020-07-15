@@ -2,11 +2,21 @@
 
 namespace App\Controller\Event;
 
+use App\Repository\EventConfigRepository;
+use App\Repository\EventRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 
 class ApiController extends AbstractFOSRestController
 {
+
+
 
     /**
      * @var integer HTTP status code - 200 (OK) by default
@@ -45,9 +55,9 @@ class ApiController extends AbstractFOSRestController
      *
      * @return Symfony\Component\HttpFoundation\JsonResponse
      */
-    public function respond($data, $headers = [])
+    public function respond($data, $headers = ['Content-Type' => 'application/json'])
     {
-        return new JsonResponse($data, $this->getStatusCode(), $headers);
+        return new Response($data, $this->getStatusCode(), $headers);
     }
 
     /**
@@ -115,8 +125,8 @@ class ApiController extends AbstractFOSRestController
         return $this->setStatusCode(201)->respond($data);
     }
 
-// this method allows us to accept JSON payloads in POST requests
-// since Symfony 4 doesn't handle that automatically:
+     // this method allows us to accept JSON payloads in POST requests
+     // since Symfony 4 doesn't handle that automatically:
 
     protected function transformJsonBody(\Symfony\Component\HttpFoundation\Request $request)
     {
@@ -134,4 +144,14 @@ class ApiController extends AbstractFOSRestController
 
         return $request;
     }
+
+    protected function serializer($data, $serializer)
+    {
+        return $serializer->serialize($data, 'json', [
+            'circular_reference_handler' => function ($object) {
+                return $object->getId();
+            }
+        ]);
+    }
+
 }

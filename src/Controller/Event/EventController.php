@@ -4,11 +4,13 @@ namespace App\Controller\Event;
 
 use App\Entity\Event;
 use App\Entity\EventConfig;
+use App\Repository\EventConfigRepository;
 use App\Repository\EventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\Request\ParamFetcher;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use Symfony\Component\Serializer\Serializer;
@@ -16,23 +18,42 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-class EventController extends AbstractFOSRestController
+
+class EventController extends ApiController
 {
     /**
-     * @var EventRepository
-     */
-    private $repo;
-    /**
-     * @var EntityManagerInterface
-     */
+     * @var EntityManager
+     **/
     private $entityManager;
+
+    /**
+     * @var EventRepository
+     **/
+    private $eventRepository;
+
+    /**
+     * @var EventConfigRepository
+     **/
+    private $eventConfigRepository;
+
+    /**
+     * @var Encoders
+     **/
     private $encoders;
+
+    /**
+     * @var Normalizers
+     **/
     private $normalizers;
+
+    /**
+     * @var Serializer
+     **/
     private $serializer;
 
     public function __construct(EventRepository $eventRepository, EntityManagerInterface $entityManager)
     {
-        $this->repo = $eventRepository;
+        $this->eventRepository = $eventRepository;
         $this->entityManager = $entityManager;
         $this->encoders = [new JsonEncoder()]; // If no need for XmlEncoder
         $this->normalizers = [new DateTimeNormalizer(), new ObjectNormalizer()];
@@ -55,43 +76,46 @@ class EventController extends AbstractFOSRestController
         return new Response($jsonObject, 200, ['Content-Type' => 'application/json']);    }
 
     /**
-     * @Rest\Get("/getEvent{id}")
+     * @Rest\Get("/getEvent/{id}")
      */
-    public function getEventAction(int $id)
+    public function getEventAction(Request $request)
     {
-        return $this->json([
-            'message' => 'Weclome to your new Controller',
-            'path' => 'src/Controller/WelcomeController.php',
+        $request = $this->transformJsonBody($request);
+        $event = $this->eventRepository->findOneBy(['id' => $request->get('id')]);
+       // $jsonObject = $this->serializer($event,$this->serializer);
+        //return $this->respond($jsonObject);
+        $jsonObject = $this->serializer->serialize($event, 'json', [
+            'circular_reference_handler' => function ($object) {
+                return $object->getId();
+            }
         ]);
+        return new Response($jsonObject, 200, ['Content-Type' => 'application/json']);
+
     }
 
     /**
-     * @Rest\QueryParam(name="eventName", description="title of the list", nullable=false)
-     * @Rest\QueryParam(name="distance", description="title of the list", nullable=false)
-     * @Rest\QueryParam(name="location", description="title of the list", nullable=false)
-     * @Rest\QueryParam(name="startDate", description="title of the list", nullable=false)
-     * @Rest\QueryParam(name="endDate", description="title of the list", nullable=false)
-     * @Rest\QueryParam(name="isTheme", description="title of the list", nullable=false)
-     * @param ParamFetcher $paramFetcher
-     * @Rest\Put("/putEvent")
-     * @return
+     * @Rest\Post("/postEvent")
      */
-    public function putEventAction(ParamFetcher $paramFetcher)
+    public function putEventAction(Request $request)
     {
-        $eventName = $paramFetcher->get('eventName');
-        $distance = $paramFetcher->get('distance');
-        $location = $paramFetcher->get('location');
-        $startDate = $paramFetcher->get('startDate');
-        $endDate = $paramFetcher->get('endDate');
-        $isTheme = $paramFetcher->get('isTheme');
-        if($eventName && $distance && $location && $startDate && $endDate && $isTheme){
+        $request = $this->transformJsonBody($request);
+        if (!$request) {
+            return $this->respondValidationError('Please provide a valid request!');
+        }
+
+        // validate Variables Needed !!!!!
+        if (! $request->get('eventName')) {
+            return $this->respondValidationError('Please provide a event!');
+        }
+        // Create and persist the new event Config using cascade since that the relation is composition oneToOne
             $event = new Event();
-            $event->setEventName($eventName);
-            $event->setDistance($distance);
-            $event->setLocation($location);
-            $event->setStartDate( (new \DateTime())->setTimestamp($startDate));
-            $event->setEndDate( (new \DateTime())->setTimestamp($endDate));
-            $event->setIsTheme($isTheme);
+            $eventConfig = $request->get('eventConfig');
+            $event->setEventName( $request->get('eventName'));
+            $event->setDistance($request->get('distance'));
+            $event->setLocation($request->get('location'));
+            $event->setStartDate( (new \DateTime())->setTimestamp($request->get('startDate')));
+            $event->setEndDate( (new \DateTime())->setTimestamp($request->get('endDate')));
+            $event->setIsTheme($request->get('isTheme'));
             $this->entityManager->persist($event);
             $this->entityManager->flush();
             $jsonObject = $this->serializer->serialize($event, 'json', [
@@ -100,8 +124,6 @@ class EventController extends AbstractFOSRestController
                 }
             ]);
             return new Response($jsonObject, 200, ['Content-Type' => 'application/json']);
-        }
-        return new Response('$title => this cannot be null', Response::HTTP_BAD_REQUEST, ['Content-Type' => 'application/json']);
     }
 
     /**
@@ -126,12 +148,5 @@ class EventController extends AbstractFOSRestController
         ]);
     }
 
-    /**
-     * @Rest\Get("/backGround")
-     */
-    public function backGround(ParamFetcher $paramFetcher)
-    {
-        var_dump(($paramFetcher->get('image')));
-        return count($_FILES);
-    }
+
 }

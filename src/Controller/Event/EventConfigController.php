@@ -56,24 +56,36 @@ class EventConfigController extends ApiController
     public function __construct(EntityManagerInterface $entityManager, EventRepository $eventRepository,
                                 EventConfigRepository $eventConfigRepository)
     {
-        $this->entityManager = $entityManager;
-        $this->eventRepository = $eventRepository;
-        $this->eventConfigRepository = $eventConfigRepository;
         $this->encoders = [new JsonEncoder()]; // If no need for XmlEncoder
         $this->normalizers = [new DateTimeNormalizer(), new ObjectNormalizer()];
         $this->serializer = new Serializer($this->normalizers, $this->encoders);
+        $this->entityManager = $entityManager;
+        $this->eventRepository = $eventRepository;
+        $this->eventConfigRepository = $eventConfigRepository;
     }
 
 
     /**
      * @Rest\RequestParam(name="eventID", description="title of the list", nullable=false)
-     * @Rest\Get("/config/getAllConfig")
+     * @Rest\Get("/config/getConfigs")
      */
     public function index()
     {
         $eventConfigs = $this->eventConfigRepository->transformAll();
+        $jsonObject = $this->serializer($eventConfigs,$this->serializer);
+        return $this->respond($jsonObject);
+    }
 
-        return $this->respond($eventConfigs);
+    /**
+     * @Rest\QueryParam(name="id", description="title of the list", nullable=false)
+     * @Rest\Get("/config/getConfig")
+     */
+    public function getConfig(Request $request)
+    {
+        $request = $this->transformJsonBody($request);
+        $eventConfig = $this->eventConfigRepository->findOneBy(['id' => $request->get('id')]);
+        $jsonObject = $this->serializer($eventConfig,$this->serializer);
+        return $this->respond($jsonObject);
     }
 
     /**
@@ -108,13 +120,8 @@ class EventConfigController extends ApiController
         $this->entityManager->persist($event);
         $this->entityManager->flush();
 
-        //return $this->respondCreated($eventConfigRepository->transform($eventConfig));
-        $jsonObject = $this->serializer->serialize($eventConfig, 'json', [
-            'circular_reference_handler' => function ($object) {
-                return $object->getId();
-            }
-        ]);
-        return new Response($jsonObject, 200, ['Content-Type' => 'application/json']);
+        $jsonObject = $this->serializer($eventConfig, $this->serializer);
+        return $this->respond($jsonObject);
     }
 
 

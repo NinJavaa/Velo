@@ -59,13 +59,13 @@ class EventConfigRepository extends ServiceEntityRepository
     public function transformAll()
     {
         $eventConfigs = $this->findAll();
-        $eventConfigArray = [];
+      /*  $eventConfigArray = [];
 
         foreach ($eventConfigs as $eventConfig) {
             $eventConfigArray[] = $this->transform($eventConfig);
-        }
+        }*/
 
-        return $eventConfigArray;
+        return $eventConfigs;
     }
 
 
